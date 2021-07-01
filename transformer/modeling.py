@@ -2111,7 +2111,7 @@ class BertForSentencePairClassification(BertPreTrainedModel):
             return logits
 
 
-class BertForSequenceClassification(PreTrainedBertModel):
+class BertForSequenceClassification(BertPreTrainedModel):
     """BERT model for classification.
     This module is composed of the BERT model with a linear layer on top of
     the pooled output.
@@ -2197,7 +2197,7 @@ class BertForSequenceClassification(PreTrainedBertModel):
         )
         # return pooled_output
 
-        
+
 class TinyBertForSequenceClassification(BertPreTrainedModel):
     def __init__(self, config, num_labels, fit_size=768):
         super(TinyBertForSequenceClassification, self).__init__(config)
