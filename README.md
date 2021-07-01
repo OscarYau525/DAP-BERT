@@ -25,7 +25,7 @@ Depending on the resource constraint, choose
     bash scripts/ft_bertbase.sh CoLA bert-base-uncased 10 42
     ```
 
-2. or download fine-tuned models from [TinyBERT](https://github.com/huawei-noah/Pretrained-Language-Model/tree/master/TinyBERT), i.e. TinyBERT(4layer-312dim) or TinyBERT(6layer-768dim)
+2. or download fine-tuned models from [TinyBERT](https://github.com/huawei-noah/Pretrained-Language-Model/tree/master/TinyBERT), i.e. TinyBERT(4layer-312dim) or TinyBERT.(6layer-768dim)
 
 Please put all models in DAP-BERT/models.
 
