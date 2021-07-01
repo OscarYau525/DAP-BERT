@@ -748,7 +748,6 @@ class BertSelfOutputPruned(nn.Module):
 class BertIntermediate(nn.Module):
     def __init__(self, config, intermediate_size=-1):
         super(BertIntermediate, self).__init__()
-        print("Intermediate size: ", config.intermediate_size)
         if intermediate_size < 0:
             self.dense = nn.Linear(
                 config.hidden_size, config.intermediate_size)
