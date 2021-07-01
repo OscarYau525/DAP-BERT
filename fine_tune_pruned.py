@@ -36,7 +36,7 @@ from torch.nn import CrossEntropyLoss, MSELoss
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import matthews_corrcoef, f1_score
 
-from transformer.modeling import TinyBertForSequenceClassification, DapBertForSequenceClassificationSearch, DepolyableBert, RandomAlphaMaskModel
+from transformer.modeling import TinyBertForSequenceClassification, DapBertForSequenceClassificationSearch, DapBertForSequenceClassification, RandomAlphaMaskModel
 from transformer.tokenization import BertTokenizer
 from transformer.optimization import BertAdam
 from transformer.file_utils import WEIGHTS_NAME, CONFIG_NAME
@@ -1148,11 +1148,11 @@ def main():
         student_model = searched_model
     else:
         if args.keep_weights_from_search:
-            student_model = DepolyableBert(args.searched_model, num_labels, weights_dir=args.searched_model) # load arch. and weights from search model
+            student_model = DapBertForSequenceClassification(args.searched_model, num_labels, weights_dir=args.searched_model) # load arch. and weights from search model
         elif args.pred_distill or args.do_test or args.do_eval:
-            student_model = DepolyableBert(args.student_model, num_labels) # load arch. and weights from student model
+            student_model = DapBertForSequenceClassification(args.student_model, num_labels) # load arch. and weights from student model
         else:
-            student_model = DepolyableBert(args.searched_model, num_labels, weights_dir=args.student_model) # load arch. from search model, restore weights from student model
+            student_model = DapBertForSequenceClassification(args.searched_model, num_labels, weights_dir=args.student_model) # load arch. from search model, restore weights from student model
     
     if args.int_distill:
         multihead_indx = student_model.arch_indx["multihead"]

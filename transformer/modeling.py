@@ -2375,43 +2375,6 @@ class DapBertForSequenceClassificationSearch(BertPreTrainedModel):
             sequence_output = tmp
         return logits, att_output, sequence_output, expected_flop, sampled_arch
 
-class DapBertForSequenceClassificationPruned(BertPreTrainedModel):
-    def __init__(self, config, num_labels, args=None, fit_size=768, searched_model=None):
-        super(DapBertForSequenceClassificationPruned, self).__init__(config)
-        with torch.no_grad():
-            masks = searched_model.get_alpha_masks()
-        # self.show_arch_summary(arch[0])
-        self.num_labels = num_labels
-        self.bert = BertModelPruned(searched_model.config, masks)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.classifier = nn.Linear(config.hidden_size, num_labels)
-        self.fit_dense = nn.Linear(config.hidden_size, fit_size)
-        self.apply(self.init_bert_weights)
-        self.args = args
-
-    def show_arch_summary(self, arch):
-        print('================embbeding length====================')
-        for layer_arch in arch:
-            for head_arch in layer_arch:
-                one_head = [len(qkv_arch)for qkv_arch in head_arch]
-                print(one_head, end=' | ')
-            print()
-        print('====================================================')
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None,
-                labels=None, is_student=False):
-
-        sequence_output, att_output, pooled_output = self.bert(input_ids, token_type_ids, attention_mask,
-                                                               output_all_encoded_layers=True, output_att=True)
-
-        logits = self.classifier(torch.relu(pooled_output))
-
-        tmp = []
-        if is_student:
-            for s_id, sequence_layer in enumerate(sequence_output):
-                tmp.append(self.fit_dense(sequence_layer))
-            sequence_output = tmp
-        return logits, att_output, sequence_output
 
 class RandomAlphaMaskModel():
     def __init__(self, device, args):
@@ -2516,11 +2479,10 @@ class RandomAlphaMaskModel():
         # print("***\nheads: %s G\nff: %s G\npooler_cls: %s G"%(str(heads_flop.item()/1e9), str(ff_flop.item()/1e9), str(pooler_cls_flop.item()/1e9)))
         return ff_flop*2, heads_flop*2, pooler_cls_flop*2 # *2 to count addition
 
-# DEPOLY
 
-class DepolyableBertSelfOutput(nn.Module):
+class DapBertSelfOutput(nn.Module):
     def __init__(self, config):
-        super(DepolyableBertSelfOutput, self).__init__()
+        super(DapBertSelfOutput, self).__init__()
         all_head_size = config.num_attention_heads * config.attention_head_size
         self.dense = nn.Linear(all_head_size, config.hidden_size)
         self.LayerNorm = BertLayerNorm(config.hidden_size, eps=1e-12)
@@ -2533,9 +2495,9 @@ class DepolyableBertSelfOutput(nn.Module):
         return hidden_states
 
 
-class DepolyableBertSelfAttention(nn.Module):
+class DapBertSelfAttention(nn.Module):
     def __init__(self, config):
-        super(DepolyableBertSelfAttention, self).__init__()
+        super(DapBertSelfAttention, self).__init__()
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = config.attention_head_size
         self.all_head_size = self.num_attention_heads * self.attention_head_size
@@ -2584,12 +2546,12 @@ class DepolyableBertSelfAttention(nn.Module):
         return context_layer, attention_scores
 
 
-class DepolyableBertAttention(nn.Module):
+class DapBertAttention(nn.Module):
     def __init__(self, config):
-        super(DepolyableBertAttention, self).__init__()
+        super(DapBertAttention, self).__init__()
 
-        self.self = DepolyableBertSelfAttention(config)
-        self.output = DepolyableBertSelfOutput(config)
+        self.self = DapBertSelfAttention(config)
+        self.output = DapBertSelfOutput(config)
 
     def forward(self, input_tensor, attention_mask):
         self_output, layer_att = self.self(input_tensor, attention_mask)
@@ -2597,10 +2559,10 @@ class DepolyableBertAttention(nn.Module):
         return attention_output, layer_att
 
 
-class DepolyableBertLayer(nn.Module):
+class DapBertLayer(nn.Module):
     def __init__(self, config):
-        super(DepolyableBertLayer, self).__init__()
-        self.attention = DepolyableBertAttention(config) # changed config.num_attention_heads
+        super(DapBertLayer, self).__init__()
+        self.attention = DapBertAttention(config) # changed config.num_attention_heads
         self.intermediate = BertIntermediate(config) # changed config.intermediate_size
         self.output = BertOutput(config)
 
@@ -2613,17 +2575,17 @@ class DepolyableBertLayer(nn.Module):
         return layer_output, layer_att
 
 
-class DepolyableBertEncoder(nn.Module):
+class DapBertEncoder(nn.Module):
     def __init__(self, config):
-        super(DepolyableBertEncoder, self).__init__()
+        super(DapBertEncoder, self).__init__()
         hidden_layers = []
         config.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         for i in range(config.num_hidden_layers):
             config.num_attention_heads = config.pruned_nums_attention_heads[i]
             config.intermediate_size = config.pruned_intermediate_size[i]
-            hidden_layers.append(DepolyableBertLayer(config))
+            hidden_layers.append(DapBertLayer(config))
         self.layer = nn.ModuleList(hidden_layers)
-        # self.layer = nn.ModuleList([DepolyableBertLayer(config) for _ in range(config.num_hidden_layers)])
+        # self.layer = nn.ModuleList([DapBertLayer(config) for _ in range(config.num_hidden_layers)])
 
     def forward(self, hidden_states, attention_mask):
         all_encoder_layers = []
@@ -2638,11 +2600,11 @@ class DepolyableBertEncoder(nn.Module):
         return all_encoder_layers, all_encoder_atts
 
 
-class DepolyableBertModel(nn.Module):
+class DapBertModel(nn.Module):
     def __init__(self, config):
-        super(DepolyableBertModel, self).__init__()
+        super(DapBertModel, self).__init__()
         self.embeddings = BertEmbeddings(config)
-        self.encoder = DepolyableBertEncoder(config)
+        self.encoder = DapBertEncoder(config)
         self.pooler = BertPooler(config)
 
     def forward(self, input_ids, token_type_ids=None, attention_mask=None,
@@ -2683,10 +2645,10 @@ class DepolyableBertModel(nn.Module):
         return encoded_layers, layer_atts, pooled_output
 
 
-class DepolyableBert(nn.Module):
+class DapBertForSequenceClassification(nn.Module):
     def __init__(self, searched_model_arch_dir, num_labels, weights_dir=None):
         # Load config
-        super(DepolyableBert, self).__init__()
+        super(DapBertForSequenceClassification, self).__init__()
         if weights_dir == None:
             weights_dir = searched_model_arch_dir
             self.need_reshape = False
@@ -2708,7 +2670,7 @@ class DepolyableBert(nn.Module):
             self.transform_head_acti_to_MHA_acti() # Now, arch_indx["multihead"] are indx of heads, arch_indx["MHA"] are indx of dimensions in combined MHA
         logger.info("Model architecture size MHA %s FF %s"%(str(self.config.pruned_nums_attention_heads), str(self.config.pruned_intermediate_size)))
 
-        self.bert = DepolyableBertModel(self.config)
+        self.bert = DapBertModel(self.config)
         self.dropout = nn.Dropout(self.config.hidden_dropout_prob)
         self.classifier = nn.Linear(self.config.hidden_size, num_labels)
         self.config.num_attention_heads = self.config._num_attention_heads # reload, because variables abused for init model
