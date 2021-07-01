@@ -743,14 +743,8 @@ def do_eval(model, task_name, eval_dataloader,
         preds = np.argmax(preds, axis=1)
     elif output_mode == "regression":
         preds = np.squeeze(preds)
-    # logger.info("preds %s", list(preds))
-    # logger.info("eval_labels %s", list(eval_labels.numpy()))
 
     result = compute_metrics(task_name, preds, eval_labels.numpy())
-    # print(list(preds))
-    # print(list(eval_labels.numpy()))
-    # print(result['mcc'])
-    # exit()
     result['eval_loss'] = eval_loss
 
     return result
@@ -805,11 +799,9 @@ def get_flop_loss(expected_flop, flop_cur, flop_need, flop_tolerant):
 ##################################################
 # Copyright (c) Xuanyi Dong [GitHub D-X-Y], 2019 #
 ##################################################
-    # expected_flop = torch.mean( expected_flop )
 
     if flop_cur < flop_need - flop_tolerant:   # Too Small FLOP
         loss = - torch.log( expected_flop )
-    #elif flop_cur > flop_need + flop_tolerant: # Too Large FLOP
     elif flop_cur > flop_need: # Too Large FLOP
         loss = torch.log( expected_flop )
     else: # Required FLOP
@@ -825,9 +817,7 @@ def get_model_flops(model, one_input):
     segment_ids = torch.unsqueeze(segment_ids, 0)
     label_ids = torch.unsqueeze(label_ids, 0)
     seq_lengths = torch.unsqueeze(seq_lengths, 0)
-    # cache_inputs = torch.rand(*shape)
     if next(model.parameters()).is_cuda: 
-        # cache_inputs = cache_inputs.cuda()
         input_ids = input_ids.cuda()
         input_mask = input_mask.cuda()
         segment_ids = segment_ids.cuda()
