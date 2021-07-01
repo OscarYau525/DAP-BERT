@@ -5,6 +5,7 @@ We recommend using conda and replicate the environment in requirements.txt by ru
     ```
     conda create --name DAP-BERT --file requirements.txt
     ```
+
 Download the GLUE dataset using [download_glue_data.py](https://gist.github.com/W4ngatang/60c2bdb54d156a41194446737ce03e2e), i.e. run
     ```
     python download_glue_data.py --data_dir glue_data --tasks all
@@ -30,7 +31,7 @@ Depending on the resource constraint, choose
 
 2. or download fine-tuned models from [TinyBERT](https://github.com/huawei-noah/Pretrained-Language-Model/tree/master/TinyBERT), i.e. TinyBERT(4layer-312dim) or TinyBERT(6layer-768dim)
 
-Please put all models in DAP-BERT/models
+Please put all models in DAP-BERT/models.
 
 # Demo
 Edit scripts/demo.sh to change paths to fine-tuned models and GLUE dataset. 
