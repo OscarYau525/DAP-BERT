@@ -1295,10 +1295,10 @@ def main():
 
                 nb_tr_examples += label_ids.size(0)
 
-                print("alpha gradient:")
-                student_model.alpha_gradient()
-                print("alpha value:")
-                student_model.alpha_summary()
+                # print("alpha gradient:")
+                # student_model.alpha_gradient()
+                # print("alpha value:")
+                # student_model.alpha_summary()
                 if global_step % 20 == 0:
                     if args.search_embedding:
                         show_arch_summary(sampled_arch[0], 'embedding size') # print current embedding size 
