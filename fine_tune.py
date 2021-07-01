@@ -1059,15 +1059,15 @@ def main():
                     model_out = model(input_ids, segment_ids, input_mask)
                     logits = model_out[0]
 
-                logits = logits.detach().cpu().numpy()
-                label_ids = label_ids.to('cpu').numpy()
-                tmp_eval_metric = accuracy(logits, label_ids)
-                tmp_eval_loss = loss_fct(logits.view(-1, num_labels), label_ids.view(-1))
-                eval_loss += tmp_eval_loss.mean().item()
-                eval_metric += tmp_eval_metric
+                    tmp_eval_loss = loss_fct(logits.view(-1, num_labels), label_ids.view(-1))
+                    logits = logits.detach().cpu().numpy()
+                    label_ids = label_ids.to('cpu').numpy()
+                    tmp_eval_metric = accuracy(logits, label_ids)
+                    eval_loss += tmp_eval_loss.mean().item()
+                    eval_metric += tmp_eval_metric
 
-                nb_eval_examples += input_ids.size(0)
-                nb_eval_steps += 1
+                    nb_eval_examples += input_ids.size(0)
+                    nb_eval_steps += 1
 
             eval_loss = eval_loss / nb_eval_steps
             eval_metric = eval_metric / nb_eval_examples
@@ -1085,19 +1085,19 @@ def main():
                     model_out = model(input_ids, segment_ids, input_mask)
                     logits = model_out[0]
 
-                logits = logits.detach().cpu().numpy()
-                label_ids = label_ids.to('cpu').numpy()
+                    logits = logits.detach().cpu().numpy()
+                    label_ids = label_ids.to('cpu').numpy()
 
-                tmp_eval_loss = loss_fct(logits.view(-1), label_ids.view(-1))
-                eval_loss += tmp_eval_loss.mean().item()
+                    tmp_eval_loss = loss_fct(logits.view(-1), label_ids.view(-1))
+                    eval_loss += tmp_eval_loss.mean().item()
 
-                nb_eval_examples += input_ids.size(0)
-                nb_eval_steps += 1
-                if len(preds) == 0:
-                    preds.append(logits)
-                else:
-                    preds[0] = np.append(
-                        preds[0], logits, axis=0)
+                    nb_eval_examples += input_ids.size(0)
+                    nb_eval_steps += 1
+                    if len(preds) == 0:
+                        preds.append(logits)
+                    else:
+                        preds[0] = np.append(
+                            preds[0], logits, axis=0)
 
             eval_loss = eval_loss / nb_eval_steps
             preds = preds[0]

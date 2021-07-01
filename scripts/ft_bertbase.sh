@@ -22,7 +22,7 @@ python ${PROJECT_DIR}/fine_tune.py \
   --do_eval  \
   --do_lower_case  \
   --data_dir ${GLUE_DIR}/${TASK_NAME}  \
-  --cache_dir ~/lyu2002_1tb/.cache  \
+  --cache_dir ${PROJECT_DIR}/.cache  \
   --bert_model ${MODEL_NAME}  \
   --max_seq_length 128 \
   --train_batch_size 128  \
