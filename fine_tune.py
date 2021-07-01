@@ -31,6 +31,7 @@ import numpy as np
 import torch
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
+from torch.nn import CrossEntropyLoss, MSELoss
 
 from transformer.tokenization import BertTokenizer
 from transformer.modeling import BertForSequenceClassification
@@ -1047,6 +1048,7 @@ def main():
         nb_eval_steps, nb_eval_examples = 0, 0
 
         if task_name != "sts-b":
+            loss_fct = CrossEntropyLoss()
             for input_ids, input_mask, segment_ids, label_ids, _ in tqdm(eval_dataloader, desc="Evaluating"):
                 input_ids = input_ids.to(device)
                 input_mask = input_mask.to(device)
@@ -1054,14 +1056,13 @@ def main():
                 label_ids = label_ids.to(device)
 
                 with torch.no_grad():
-                    tmp_eval_loss, _ = model(input_ids, segment_ids, input_mask, label_ids)
                     model_out = model(input_ids, segment_ids, input_mask)
                     logits = model_out[0]
 
                 logits = logits.detach().cpu().numpy()
                 label_ids = label_ids.to('cpu').numpy()
                 tmp_eval_metric = accuracy(logits, label_ids)
-
+                tmp_eval_loss = loss_fct(logits.view(-1, num_labels), label_ids.view(-1))
                 eval_loss += tmp_eval_loss.mean().item()
                 eval_metric += tmp_eval_metric
 
@@ -1071,6 +1072,7 @@ def main():
             eval_loss = eval_loss / nb_eval_steps
             eval_metric = eval_metric / nb_eval_examples
         else:
+            loss_fct = MSELoss()
             preds = []
             eval_labels = all_label_ids
             for input_ids, input_mask, segment_ids, label_ids, _ in tqdm(eval_dataloader, desc="Evaluating"):
@@ -1080,13 +1082,13 @@ def main():
                 label_ids = label_ids.to(device)
 
                 with torch.no_grad():
-                    tmp_eval_loss, _ = model(input_ids, segment_ids, input_mask, label_ids)
                     model_out = model(input_ids, segment_ids, input_mask)
                     logits = model_out[0]
 
                 logits = logits.detach().cpu().numpy()
                 label_ids = label_ids.to('cpu').numpy()
 
+                tmp_eval_loss = loss_fct(logits.view(-1), label_ids.view(-1))
                 eval_loss += tmp_eval_loss.mean().item()
 
                 nb_eval_examples += input_ids.size(0)

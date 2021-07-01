@@ -1,11 +1,7 @@
 # DAP-BERT
 
 # Installation
-We recommend using conda and replicate the environment in requirements.txt by running
-```
-conda create --name DAP-BERT --file requirements.txt
-```
-
+This repo is tested on pytorch 1.6.0.
 Download the GLUE dataset using [download_glue_data.py](https://gist.github.com/W4ngatang/60c2bdb54d156a41194446737ce03e2e), i.e. run
 ```
 python download_glue_data.py --data_dir glue_data --tasks all
