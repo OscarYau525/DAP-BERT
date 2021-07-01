@@ -495,7 +495,7 @@ class BertSelfAttentionSearch(nn.Module):
             mixed_value_layer = self.value(hidden_states) # size: (32, 128, 768), (batch_size, sentence_max_len, embedding_len)
 
         if self.args.search_qkv_hidden:
-            assert selected_qkv_masks != None, "Missing qkv masks for searching qkv hidden length"
+            # assert selected_qkv_masks != None, "Missing qkv masks for searching qkv hidden length"
             hidden_q_mask = selected_qkv_masks[:,0,:].flatten()
             hidden_k_mask = selected_qkv_masks[:,0,:].flatten()
             hidden_v_mask = selected_qkv_masks[:,1,:].flatten()
@@ -687,7 +687,7 @@ class BertAttentionSearch(nn.Module):
         self_output, layer_att = self.self(mode, input_tensor, attention_mask, 
             selected_embedding_masks=selected_embedding_masks, selected_qkv_masks=selected_qkv_masks)
         if self.mask_head:
-            assert selected_head_mask != None, "Empty mask in BertAttentionSearch when search_heads" 
+            # assert selected_head_mask != None, "Empty mask in BertAttentionSearch when search_heads" 
             attention_output = self.output(self_output, input_tensor, head_mask=selected_head_mask)
         else:
             attention_output = self.output(self_output, input_tensor)
@@ -786,7 +786,7 @@ class BertIntermediateSearch(nn.Module):
             raise ValueError('incorrect mode at BertIntermediateSearch forward: %s'%(mode))
 
     def search_forward(self, hidden_states, mask):
-        assert mask != None, 'empty mask at BertIntermediateSearch search_forward'
+        # assert mask != None, 'empty mask at BertIntermediateSearch search_forward'
         hidden_states = self.dense(hidden_states)
         hidden_states = self.intermediate_act_fn(hidden_states)
         return hidden_states * mask
