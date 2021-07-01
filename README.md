@@ -2,9 +2,13 @@
 
 # Installation
 We recommend using conda and replicate the environment in requirements.txt by running
-    ```conda create --name DAP-BERT --file requirements.txt```
+    ```
+    conda create --name DAP-BERT --file requirements.txt
+    ```
 Download the GLUE dataset using [download_glue_data.py](https://gist.github.com/W4ngatang/60c2bdb54d156a41194446737ce03e2e), i.e. run
-    ```python download_glue_data.py --data_dir glue_data --tasks all```
+    ```
+    python download_glue_data.py --data_dir glue_data --tasks all
+    ```
 
 # Data augmentation
 1. Get pre-trained bert model from [huggingface](https://huggingface.co/bert-base-uncased/tree/main).
@@ -20,7 +24,9 @@ Download the GLUE dataset using [download_glue_data.py](https://gist.github.com/
 # Prepare your fine-tuned model
 Depending on the resource constraint, choose
 1. fine-tuning a bert-base-uncased by scripts/fine_tune.sh, e.g.
-        ```bash scripts/fine_tune.sh CoLA bert-base-uncased 10 42```
+    ```
+    bash scripts/fine_tune.sh CoLA bert-base-uncased 10 42
+    ```
 
 2. or download fine-tuned models from [TinyBERT](https://github.com/huawei-noah/Pretrained-Language-Model/tree/master/TinyBERT), i.e. TinyBERT(4layer-312dim) or TinyBERT(6layer-768dim)
 
@@ -29,5 +35,7 @@ Please put all models in DAP-BERT/models
 # Demo
 Edit scripts/demo.sh to change paths to fine-tuned models and GLUE dataset. 
 Example to run demo.sh:
-    ```bash scripts/demo.sh 0.5 0.1 CoLA 10 10 42```
+    ```
+    bash scripts/demo.sh 0.5 0.1 CoLA 10 10 42
+    ```
 
