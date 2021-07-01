@@ -29,7 +29,7 @@ Depending on the resource constraint, choose
 
 Please put all models in DAP-BERT/models.
 
-# Demo
+# Differentiable Architecture Pruning
 Edit scripts/demo.sh to change paths to fine-tuned models and GLUE dataset. 
 Example to run demo.sh:
 ```
