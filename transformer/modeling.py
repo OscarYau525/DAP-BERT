@@ -479,7 +479,7 @@ class BertSelfAttentionSearch(nn.Module):
     def search_forward(self, hidden_states, attention_mask, selected_embedding_masks=None, selected_qkv_masks=None):
         # selected_embedding_masks: (12, 3, 312) / (1, 3, 312) / (1, 1, 312)
         # hidden_states: (batch, embedding_len)
-        if self.args.search_embedding and selected_embedding_masks != None:
+        if self.args.search_embedding and not selected_embedding_masks is None:
             # selected_embedding_masks: (3, 312)
             q_masks = selected_embedding_masks[0]
             k_masks = selected_embedding_masks[1]
@@ -495,7 +495,7 @@ class BertSelfAttentionSearch(nn.Module):
             mixed_value_layer = self.value(hidden_states) # size: (32, 128, 768), (batch_size, sentence_max_len, embedding_len)
 
         if self.args.search_qkv_hidden:
-            # assert selected_qkv_masks != None, "Missing qkv masks for searching qkv hidden length"
+            # assert not selected_qkv_masks is None, "Missing qkv masks for searching qkv hidden length"
             hidden_q_mask = selected_qkv_masks[:,0,:].flatten()
             hidden_k_mask = selected_qkv_masks[:,0,:].flatten()
             hidden_v_mask = selected_qkv_masks[:,1,:].flatten()
@@ -584,9 +584,9 @@ class BertSelfAttentionPruned(nn.Module):
         self.query = nn.Linear(config.hidden_size, self.all_head_size)
         self.key = nn.Linear(config.hidden_size, self.all_head_size)
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
-        self.embedding_in_layer = emb_masks != None
+        self.embedding_in_layer = not emb_masks is None
 
-        if config.search_embedding and emb_masks != None:
+        if config.search_embedding and not emb_masks is None:
             self.register_buffer('embedding_query_mask', emb_masks[0])
             self.register_buffer('embedding_key_mask', emb_masks[1])
             self.register_buffer('embedding_value_mask', emb_masks[2])
@@ -687,7 +687,7 @@ class BertAttentionSearch(nn.Module):
         self_output, layer_att = self.self(mode, input_tensor, attention_mask, 
             selected_embedding_masks=selected_embedding_masks, selected_qkv_masks=selected_qkv_masks)
         if self.mask_head:
-            # assert selected_head_mask != None, "Empty mask in BertAttentionSearch when search_heads" 
+            assert not selected_head_mask is None, "Empty mask in BertAttentionSearch when search_heads" 
             attention_output = self.output(self_output, input_tensor, head_mask=selected_head_mask)
         else:
             attention_output = self.output(self_output, input_tensor)
@@ -697,11 +697,11 @@ class BertAttentionSearch(nn.Module):
 class BertAttentionPruned(nn.Module):
     def __init__(self, config, masks):
         super(BertAttentionPruned, self).__init__()
-        if masks[0] != None or masks[1] != None:
+        if not masks[0] is None or not masks[1] is None:
             self.self = BertSelfAttentionPruned(config, masks)
         else:
             self.self = BertSelfAttention(config)
-        if masks[3] != None:
+        if not masks[3] is None:
             self.output = BertSelfOutputPruned(config, masks)
         else:
             self.output = BertSelfOutput(config)
@@ -720,7 +720,7 @@ class BertSelfOutput(nn.Module):
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, hidden_states, input_tensor, head_mask=None):
-        if head_mask != None:
+        if not head_mask is None:
             hidden_states = self.dense(hidden_states * head_mask)
         else:
             hidden_states = self.dense(hidden_states)
@@ -786,7 +786,7 @@ class BertIntermediateSearch(nn.Module):
             raise ValueError('incorrect mode at BertIntermediateSearch forward: %s'%(mode))
 
     def search_forward(self, hidden_states, mask):
-        # assert mask != None, 'empty mask at BertIntermediateSearch search_forward'
+        assert not mask is None, 'empty mask at BertIntermediateSearch search_forward'
         hidden_states = self.dense(hidden_states)
         hidden_states = self.intermediate_act_fn(hidden_states)
         return hidden_states * mask
@@ -875,14 +875,14 @@ class BertLayerSearch(nn.Module):
             selected_embedding_masks=selected_embedding_masks, selected_qkv_masks=selected_qkv_masks, selected_head_mask=selected_head_mask)
         else:
             attention_output, layer_att = self.attention(hidden_states, attention_mask)
-        if self.args.search_sc and selected_sc_mask != None:
+        if self.args.search_sc and not selected_sc_mask is None:
             attention_output = attention_output * selected_sc_mask
         if self.args.search_ff:
             intermediate_output = self.intermediate(mode, attention_output, selected_intermediate_masks=selected_intermediate_masks)
         else:
             intermediate_output = self.intermediate(attention_output)
         layer_output = self.output(intermediate_output, attention_output)
-        if self.args.search_sc and selected_sc_mask != None:
+        if self.args.search_sc and not selected_sc_mask is None:
             layer_output = layer_output * selected_sc_mask
         return layer_output, layer_att
 
@@ -891,15 +891,15 @@ class BertLayerPruned(nn.Module):
     def __init__(self, config, masks):
         super(BertLayerPruned, self).__init__()
         self.masks = masks
-        if masks[4] != None:
+        if not masks[4] is None:
             self.sc_mask = masks[4].to(torch.device('cuda'))
         else:
             self.sc_mask = None
-        if masks[0] != None or masks[1] != None or masks[3] != None:
+        if not masks[0] is None or not masks[1] is None or not masks[3] is None:
             self.attention = BertAttentionPruned(config, masks)
         else:
             self.attention = BertAttention(config)
-        if masks[2] != None:
+        if not masks[2] is None:
             self.intermediate = BertIntermediatePruned(config, masks)
         else:
             self.intermediate = BertIntermediate(config)
@@ -908,11 +908,11 @@ class BertLayerPruned(nn.Module):
     def forward(self, hidden_states, attention_mask):
         attention_output, layer_att = self.attention(
             hidden_states, attention_mask)
-        if self.sc_mask != None:
+        if not self.sc_mask is None:
             attention_output = attention_output * self.sc_mask
         intermediate_output = self.intermediate(attention_output)
         layer_output = self.output(intermediate_output, attention_output)
-        if self.sc_mask != None:
+        if not self.sc_mask is None:
             layer_output = layer_output * self.sc_mask
         return layer_output, layer_att
 
