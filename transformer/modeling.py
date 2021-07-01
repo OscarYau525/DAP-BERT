@@ -2166,9 +2166,8 @@ class BertForSequenceClassification(BertPreTrainedModel):
 
 
     def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
-        return_dict = False
         outputs = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        pooled_output = outputs[1]
+        pooled_output = outputs[2]
 
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(torch.relu(pooled_output))
@@ -2177,25 +2176,16 @@ class BertForSequenceClassification(BertPreTrainedModel):
         if labels is not None:
             if self.num_labels == 1:
                 #  We are doing regression
-                loss_fct = MSELoss()
+                loss_fct = torch.nn.MSELoss()
                 # labels_float = labels.type(torch.cuda.FloatTensor)
-                print(logits.view(-1), labels.view(-1))
+                # print(logits.view(-1), labels.view(-1))
                 loss = loss_fct(logits.view(-1), labels.view(-1))
             else:
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
 
-        if not return_dict:
-            output = (logits,) + outputs[2:]
-            return ((loss,) + output) if loss is not None else output
-
-        return SequenceClassifierOutput(
-            loss=loss,
-            logits=logits,
-            hidden_states=outputs.hidden_states,
-            attentions=outputs.attentions,
-        )
-        # return pooled_output
+        output = (logits,) + outputs[2:]
+        return ((loss,) + output) if loss is not None else output
 
 
 class TinyBertForSequenceClassification(BertPreTrainedModel):
