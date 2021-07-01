@@ -26,7 +26,7 @@ python download_glue_data.py --data_dir glue_data --tasks all
 Depending on the resource constraint, choose
 1. fine-tuning a bert-base-uncased by scripts/fine_tune.sh, e.g.
     ```
-    bash scripts/fine_tune.sh CoLA bert-base-uncased 10 42
+    bash scripts/ft_bertbase.sh CoLA bert-base-uncased 10 42
     ```
 
 2. or download fine-tuned models from [TinyBERT](https://github.com/huawei-noah/Pretrained-Language-Model/tree/master/TinyBERT), i.e. TinyBERT(4layer-312dim) or TinyBERT(6layer-768dim)
