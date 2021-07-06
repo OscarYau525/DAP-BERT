@@ -49,8 +49,8 @@ python ${PROJECT_DIR}/search.py \
 			--mul_prog_arch_cstr \
 			--arch_update_ratio ${ALPHA_UR} \
 			--force_save_model \
-			# --aug_train \
 			--seed ${SEED}
+			# --aug_train 
 
 FT_INT_DIST_DIR=${PROJECT_DIR}/models/${OUT}_ft
 

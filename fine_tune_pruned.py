@@ -1282,13 +1282,14 @@ def main():
                                         for i in range(student_layer_num)]
 
                     for student_att, teacher_att, layer in zip(student_atts, new_teacher_atts, range(student_layer_num)):
-                        student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
-                                                  student_att)
-                        teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
-                                                  teacher_att)
-                        teacher_att = teacher_att[:, multihead_indx[layer],:,:] # select unpruned heads' attention maps from teacher
-                        tmp_loss = loss_mse(student_att, teacher_att)
-                        att_loss += tmp_loss
+                        if not student_att is None and len(multihead_indx[layer]) > 0:
+                            student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
+                                                    student_att)
+                            teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
+                                                    teacher_att)
+                            teacher_att = teacher_att[:, multihead_indx[layer],:,:] # select unpruned heads' attention maps from teacher
+                            tmp_loss = loss_mse(student_att, teacher_att)
+                            att_loss += tmp_loss
 
                     new_teacher_reps = [teacher_reps[i * layers_per_block] for i in range(student_layer_num + 1)]
                     new_student_reps = student_reps

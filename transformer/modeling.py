@@ -821,7 +821,10 @@ class BertIntermediatePruned(nn.Module):
 class BertOutput(nn.Module):
     def __init__(self, config, intermediate_size=-1):
         super(BertOutput, self).__init__()
-        if intermediate_size < 0:
+        self.skip_dense = False
+        if intermediate_size == 0:
+            self.skip_dense = True
+        elif intermediate_size < 0:
             self.dense = nn.Linear(
                 config.intermediate_size, config.hidden_size)
         else:
@@ -830,9 +833,12 @@ class BertOutput(nn.Module):
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, hidden_states, input_tensor):
-        hidden_states = self.dense(hidden_states)
-        hidden_states = self.dropout(hidden_states)
-        hidden_states = self.LayerNorm(hidden_states + input_tensor)
+        if not self.skip_dense:
+            hidden_states = self.dense(hidden_states)
+            hidden_states = self.dropout(hidden_states)
+            hidden_states = self.LayerNorm(hidden_states + input_tensor)
+        else:
+            hidden_states = self.LayerNorm(input_tensor)
         return hidden_states
 
 class BertLayer(nn.Module):
@@ -2549,7 +2555,6 @@ class DapBertSelfAttention(nn.Module):
 class DapBertAttention(nn.Module):
     def __init__(self, config):
         super(DapBertAttention, self).__init__()
-
         self.self = DapBertSelfAttention(config)
         self.output = DapBertSelfOutput(config)
 
@@ -2562,16 +2567,33 @@ class DapBertAttention(nn.Module):
 class DapBertLayer(nn.Module):
     def __init__(self, config):
         super(DapBertLayer, self).__init__()
-        self.attention = DapBertAttention(config) # changed config.num_attention_heads
-        self.intermediate = BertIntermediate(config) # changed config.intermediate_size
-        self.output = BertOutput(config)
+        self.skip_attn = False
+        self.skip_ff = False
+        if config.num_attention_heads > 0:
+            self.attention = DapBertAttention(config) # changed config.num_attention_heads
+        else:
+            self.skip_attn = True
+        if config.intermediate_size > 0:
+            self.intermediate = BertIntermediate(config) # changed config.intermediate_size
+            self.output = BertOutput(config)
+        else:
+            self.skip_ff = True
+            self.output = BertOutput(config, intermediate_size=0)
+        
 
     def forward(self, hidden_states, attention_mask):
-        attention_output, layer_att = self.attention(
-            hidden_states, attention_mask)
-        intermediate_output = self.intermediate(attention_output)
-        layer_output = self.output(intermediate_output, attention_output)
+        if not self.skip_attn:
+            attention_output, layer_att = self.attention(
+                hidden_states, attention_mask)
+        else:
+            attention_output = hidden_states
+            layer_att = None
 
+        if not self.skip_ff:
+            intermediate_output = self.intermediate(attention_output)
+            layer_output = self.output(intermediate_output, attention_output)
+        else:
+            layer_output = self.output(None, attention_output)
         return layer_output, layer_att
 
 
@@ -2663,7 +2685,7 @@ class DapBertForSequenceClassification(nn.Module):
         self.config._intermediate_size = self.config.intermediate_size
         logger.info("Model config {}".format(self.config))
         if self.need_load_arch:
-            arch_file = os.path.join(searched_model_arch_dir, "final_arch.txt")
+            arch_file = os.path.join(searched_model_arch_dir, "arch.json")
             arch_sizes, self.arch_indx = self.parse_arch(arch_file)
             self.config.pruned_nums_attention_heads = arch_sizes["multihead"]
             self.config.pruned_intermediate_size = arch_sizes["ff"]
@@ -2679,20 +2701,11 @@ class DapBertForSequenceClassification(nn.Module):
 
     def parse_arch(self, arch_file):
         architecture_sizes = {}
-        architecture_indx = {}
-        with open(arch_file, 'r') as file:
-            for line in file:
-                search_region, ind = line.strip().split(":")
-                architecture_sizes[search_region] = []
-                architecture_indx[search_region] = []
-                for indx in ind.split("|"):
-                    indx = indx.split(",")
-                    size = len(indx)
-                    for i in range(size):
-                        indx[i] = int(indx[i])
-                    architecture_sizes[search_region].append(size)
-                    architecture_indx[search_region].append(indx)
-        return architecture_sizes, architecture_indx
+        with open(arch_file) as f:
+            arch = json.load(f)
+            for key in arch:
+                architecture_sizes[key] = [len(layer_idx) for layer_idx in arch[key]]
+        return architecture_sizes, arch
 
     def transform_head_acti_to_MHA_acti(self):
         head_size = self.config.hidden_size // self.config.num_attention_heads

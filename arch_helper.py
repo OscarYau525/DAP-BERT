@@ -1,5 +1,6 @@
 import numpy as np
 from src.flop_benchmark import get_model_infos
+import json
 
 def show_arch_summary(arch, text, num_attention_heads=12):
     if 'qkv' in text:
@@ -195,3 +196,18 @@ def write_to_final_arch_txt(student_model, f_path):
                 sc_archs.append(','.join([str(i) for i in layer]))
             f.write('sc:' + '|'.join(sc_archs))
             f.write('\n')
+
+def write_to_final_arch_json(student_model, f_path):
+    archs, _, _ = student_model.get_archs()
+    out_arch = {}
+    if archs[2] != None:
+        # ff arch
+        out_arch["ff"] = archs[2]
+    
+    if archs[3] != None:
+        # multihead arch
+        out_arch["multihead"] = archs[3]
+    print("******Ready to json dump")
+    with open(f_path, "w") as f:
+        json.dump(out_arch, f)
+    

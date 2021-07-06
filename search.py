@@ -40,7 +40,7 @@ from transformer.tokenization import BertTokenizer
 from transformer.optimization import BertAdam
 from transformer.file_utils import WEIGHTS_NAME, CONFIG_NAME
 
-from arch_helper import show_arch_summary, count_arch_size, store_arch_summary, write_to_final_arch_txt, get_arch_flop
+from arch_helper import show_arch_summary, count_arch_size, store_arch_summary, get_arch_flop, write_to_final_arch_json
 
 csv.field_size_limit(sys.maxsize)
 
@@ -870,9 +870,9 @@ def main():
                         type=int,
                         default=5,
                         help="Initial value of the alpha tensors")
-    parser.add_argument("--write_final_arch_txt",
+    parser.add_argument("--write_arch_json",
                         action="store_true",
-                        help="create final_arch.txt in args.student_model path")
+                        help="create arch.json in args.student_model path")
                         
     # for arch flop
     parser.add_argument("--FLOP_ratio",
@@ -1002,12 +1002,12 @@ def main():
         output_arch_summary_file = os.path.join(args.student_model, "arch_summary.txt")
         store_arch_summary(archs, output_arch_summary_file, student_model.get_search_size(), student_model, eval_data[0], total_flops=flops, total_params=num_params, num_attention_heads=student_model.config.num_attention_heads)
     
-    if args.write_final_arch_txt:
+    if args.write_arch_json:
         student_model = DapBertForSequenceClassificationSearch.from_pretrained(args.student_model, num_labels=num_labels, args=args)
-        write_to_final_arch_txt(student_model, os.path.join(args.student_model, "final_arch.txt"))
-        print("successfully created %s"%os.path.join(args.student_model, "final_arch.txt"))
+        write_to_final_arch_json(student_model, os.path.join(args.student_model, "arch.json"))
+        print("successfully created %s"%os.path.join(args.student_model, "arch.json"))
 
-    if args.print_arch or args.write_final_arch_txt:
+    if args.print_arch or args.write_arch_json:
         return 0
     
     if not args.do_eval and not args.do_search_eval:
@@ -1396,7 +1396,7 @@ def main():
         if args.store_alpha:
             alpha_record_file.close()
         if args.pred_distill or args.interchanging_search_target:
-            write_to_final_arch_txt(student_model, os.path.join(args.output_dir, "final_arch.txt"))
+            write_to_final_arch_json(student_model, os.path.join(args.output_dir, "arch.json"))
 
 if __name__ == "__main__":
     main()

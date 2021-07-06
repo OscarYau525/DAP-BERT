@@ -36,7 +36,7 @@ Example to run demo.sh:
 bash scripts/demo.sh 0.5 0.1 CoLA 10 10 42
 ```
 
-CoLA_search: searched model, with sub-architecture indecies in final_arch.txt
+CoLA_search: searched model, with sub-architecture indices in arch.json
 
 CoLA_ft: fine-tuning sub-network by intermediate distillation
 
