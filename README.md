@@ -25,7 +25,7 @@ Depending on the resource constraint, choose
     bash scripts/ft_bertbase.sh CoLA bert-base-uncased 10 42
     ```
 
-2. or download fine-tuned models from [TinyBERT](https://github.com/huawei-noah/Pretrained-Language-Model/tree/master/TinyBERT), i.e. TinyBERT(4layer-312dim) or TinyBERT.(6layer-768dim)
+2. or download fine-tuned models from [TinyBERT](https://github.com/huawei-noah/Pretrained-Language-Model/tree/master/TinyBERT), i.e. TinyBERT(4layer-312dim) or TinyBERT(6layer-768dim).
 
 Please put all models in DAP-BERT/models.
 
@@ -35,4 +35,6 @@ Example to run demo.sh:
 ```
 bash scripts/demo.sh 0.5 0.1 CoLA 10 10 42
 ```
-
+CoLA_search: searched model, with sub-architecture indecies in final_arch.txt
+CoLA_ft: fine-tuning sub-network by intermediate distillation
+CoLA_ft_pred: fine-tuning sub-network by prediction distillation 
